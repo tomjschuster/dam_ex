@@ -1,10 +1,10 @@
 use Mix.Config
 
 # Configure your database
-config :file_manager, FileManager.Repo,
+config :dam_ex, DamEx.Repo,
   username: "postgres",
   password: "postgres",
-  database: "file_manager_dev",
+  database: "dam_ex_dev",
   hostname: "localhost",
   show_sensitive_data_on_connection_error: true,
   pool_size: 10
@@ -15,16 +15,18 @@ config :file_manager, FileManager.Repo,
 # The watchers configuration can be used to run external
 # watchers to your application. For example, we use it
 # with webpack to recompile .js and .css sources.
-config :file_manager, FileManagerWeb.Endpoint,
+config :dam_ex, DamExWeb.Endpoint,
   http: [port: 4000],
   debug_errors: true,
   code_reloader: true,
   check_origin: false,
+  static_url: [host: "localhost", scheme: "http", path: "/public", port: 8080],
   watchers: [
     node: [
-      "node_modules/webpack/bin/webpack.js",
+      "node_modules/webpack-dev-server/bin/webpack-dev-server.js",
       "--mode",
       "development",
+      "--hot",
       "--watch-stdin",
       cd: Path.expand("../assets", __DIR__)
     ]
@@ -55,13 +57,13 @@ config :file_manager, FileManagerWeb.Endpoint,
 # different ports.
 
 # Watch static and templates for browser reloading.
-config :file_manager, FileManagerWeb.Endpoint,
+config :dam_ex, DamExWeb.Endpoint,
   live_reload: [
     patterns: [
       ~r"priv/static/.*(js|css|png|jpeg|jpg|gif|svg)$",
       ~r"priv/gettext/.*(po)$",
-      ~r"lib/file_manager_web/{live,views}/.*(ex)$",
-      ~r"lib/file_manager_web/templates/.*(eex)$"
+      ~r"lib/dam_ex_web/{live,views}/.*(ex)$",
+      ~r"lib/dam_ex_web/templates/.*(eex)$"
     ]
   ]
 
@@ -75,7 +77,7 @@ config :phoenix, :stacktrace_depth, 20
 # Initialize plugs at runtime for faster development compilation
 config :phoenix, :plug_init_mode, :runtime
 
-config :file_manager, FileManager.Transfer, adapter: FileManager.Transfer.Adapters.S3
-config :file_manager, FileManager.Transfer.Adapters.S3, bucket: "file-manager-test-1"
+config :dam_ex, DamEx.Storage, adapter: DamEx.Storage.Adapters.S3
+config :dam_ex, DamEx.Storage.Adapters.S3, bucket: "file-manager-test-1"
 
 import_config "dev.secret.exs"

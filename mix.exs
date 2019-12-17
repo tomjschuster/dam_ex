@@ -3,7 +3,7 @@ defmodule FileManager.MixProject do
 
   def project do
     [
-      app: :file_manager,
+      app: :dam_ex,
       version: "0.1.0",
       elixir: "~> 1.5",
       elixirc_paths: elixirc_paths(Mix.env()),
@@ -19,7 +19,7 @@ defmodule FileManager.MixProject do
   # Type `mix help compile.app` for more information.
   def application do
     [
-      mod: {FileManager.Application, []},
+      mod: {DamEx.Application, []},
       extra_applications: [:logger, :runtime_tools]
     ]
   end
@@ -46,7 +46,9 @@ defmodule FileManager.MixProject do
       {:phoenix_pubsub, "~> 1.1"},
       {:plug_cowboy, "~> 2.0"},
       {:postgrex, ">= 0.0.0"},
-      {:sweet_xml, "~> 0.6"}
+      {:sweet_xml, "~> 0.6"},
+      {:timex, "~> 3.6.1"},
+      {:uuid, "~> 1.1"}
     ]
   end
 

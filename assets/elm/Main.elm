@@ -2,17 +2,13 @@ module Main exposing (main)
 
 import Browser
 import Browser.Navigation as Navigation
-import File exposing (File)
-import File.Select as Select
-import Html exposing (div, input, text)
-import Html.Attributes exposing (multiple, type_)
-import Html.Events exposing (on)
-import Http
-import Json.Decode as Decode
+import Html exposing (text)
+import Page.FileManager as FileManager
 import Url
-import Url.Builder
+import Url.Parser as Parser exposing (Parser, map, oneOf, top)
 
 
+main : Program () Model Msg
 main =
     Browser.application
         { init = init
@@ -35,7 +31,9 @@ type alias Model =
 
 
 type Page
-    = FileManager
+    = Loading
+    | NotFound
+    | FileManager FileManager.Model
 
 
 
@@ -44,7 +42,12 @@ type Page
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-    Sub.none
+    case model.page of
+        FileManager fileManager ->
+            Sub.map FileManagerMsg (FileManager.subscriptions fileManager)
+
+        _ ->
+            Sub.none
 
 
 
@@ -54,25 +57,18 @@ subscriptions model =
 view : Model -> Browser.Document Msg
 view model =
     case model.page of
-        FileManager ->
+        Loading ->
+            { title = "Loading", body = [ text "Loading" ] }
+
+        NotFound ->
+            { title = "Not Found", body = [ text "Not Found" ] }
+
+        FileManager fileManager ->
             { title = "File Manager"
             , body =
-                [ div []
-                    [ input
-                        [ type_ "file"
-                        , multiple True
-                        , on "change" (Decode.map FilesSelected filesDecoder)
-                        ]
-                        []
-                    , div [] [ text (Debug.toString model) ]
-                    ]
+                [ FileManager.view fileManager |> Html.map FileManagerMsg
                 ]
             }
-
-
-filesDecoder : Decode.Decoder (List File)
-filesDecoder =
-    Decode.at [ "target", "files" ] (Decode.list File.decoder)
 
 
 
@@ -81,11 +77,34 @@ filesDecoder =
 
 init : () -> Url.Url -> Navigation.Key -> ( Model, Cmd Msg )
 init _ url key =
-    ( { key = key
-      , page = FileManager
-      }
-    , Cmd.none
-    )
+    stepUrl url
+        { key = key
+        , page = Loading
+        }
+
+
+stepUrl : Url.Url -> Model -> ( Model, Cmd Msg )
+stepUrl url model =
+    let
+        parser =
+            oneOf
+                [ route Parser.top
+                    (stepFileManager model (FileManager.init ()))
+                ]
+    in
+    case Parser.parse parser url of
+        Just answer ->
+            answer
+
+        Nothing ->
+            ( { model | page = NotFound }
+            , Cmd.none
+            )
+
+
+route : Parser a b -> a -> Parser (b -> c) c
+route parser handler =
+    Parser.map handler parser
 
 
 
@@ -93,19 +112,14 @@ init _ url key =
 
 
 type Msg
-    = NoOp
-    | LinkClicked Browser.UrlRequest
+    = LinkClicked Browser.UrlRequest
     | UrlChanged Url.Url
-    | FilesSelected (List File)
-    | GotUrl (Result Http.Error String)
+    | FileManagerMsg FileManager.Msg
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update message model =
     case message of
-        NoOp ->
-            ( model, Cmd.none )
-
         LinkClicked urlRequest ->
             case urlRequest of
                 Browser.Internal url ->
@@ -118,24 +132,20 @@ update message model =
                     , Navigation.load href
                     )
 
-        UrlChanged url ->
+        UrlChanged _ ->
             ( model, Cmd.none )
 
-        FilesSelected files ->
-            let
-                _ =
-                    Debug.log "a" files
-            in
-            ( model
-            , Http.get
-                { url = Url.Builder.absolute [ "api", "signed-upload-url" ] [ Url.Builder.string "path" "abc" ]
-                , expect = Http.expectJson GotUrl (Decode.field "url" Decode.string)
-                }
-            )
+        FileManagerMsg msg ->
+            case model.page of
+                FileManager fileManager ->
+                    stepFileManager model (FileManager.update msg fileManager)
 
-        GotUrl url ->
-            let
-                _ =
-                    Debug.log "url" url
-            in
-            ( model, Cmd.none )
+                _ ->
+                    ( model, Cmd.none )
+
+
+stepFileManager : Model -> ( FileManager.Model, Cmd FileManager.Msg ) -> ( Model, Cmd Msg )
+stepFileManager model ( fileManager, cmds ) =
+    ( { model | page = FileManager fileManager }
+    , Cmd.map FileManagerMsg cmds
+    )

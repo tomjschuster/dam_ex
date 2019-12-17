@@ -5,6 +5,18 @@ const TerserPlugin = require('terser-webpack-plugin')
 const OptimizeCSSAssetsPlugin = require('optimize-css-assets-webpack-plugin')
 const CopyWebpackPlugin = require('copy-webpack-plugin')
 
+const prodOutput = {
+  filename: 'app.js',
+  path: path.resolve(__dirname, '../priv/static/js'),
+  publicPath: '/'
+}
+
+const devOutput = {
+  filename: 'js/app.js',
+  path: path.resolve(__dirname, 'public'),
+  publicPath: 'http://localhost:8080/public'
+}
+
 module.exports = (env, options) => ({
   optimization: {
     minimizer: [
@@ -15,10 +27,16 @@ module.exports = (env, options) => ({
   entry: {
     './js/app.js': glob.sync('./vendor/**/*.js').concat(['./js/app.js'])
   },
-  output: {
-    filename: 'app.js',
-    path: path.resolve(__dirname, '../priv/static/js')
+  devServer: {
+    headers: {
+      'Access-Control-Allow-Origin': '*'
+    },
+    // writeToDisk: true,
+    publicPath: '/public',
+    watchContentBase: true,
+    overlay: true
   },
+  output: options.mode === 'development' ? devOutput : prodOutput,
   module: {
     rules: [
       {
@@ -46,7 +64,7 @@ module.exports = (env, options) => ({
     ]
   },
   plugins: [
-    new MiniCssExtractPlugin({ filename: '../css/app.css' }),
-    new CopyWebpackPlugin([{ from: 'static/', to: '../' }])
+    new MiniCssExtractPlugin({ filename: 'css/app.css' }),
+    new CopyWebpackPlugin([{ from: 'static/', to: './' }])
   ]
 })

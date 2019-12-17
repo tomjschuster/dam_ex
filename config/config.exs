@@ -7,15 +7,19 @@
 # General application configuration
 use Mix.Config
 
-config :file_manager,
-  ecto_repos: [FileManager.Repo]
+config :dam_ex,
+  ecto_repos: [DamEx.Repo]
+
+config :dam_ex, DamEx.Repo,
+  migration_primary_key: [type: :binary_id],
+  migration_timestamps: [type: :utc_datetime_usec]
 
 # Configures the endpoint
-config :file_manager, FileManagerWeb.Endpoint,
+config :dam_ex, DamExWeb.Endpoint,
   url: [host: "localhost"],
   secret_key_base: "BBrr2jroYPdkaIF+wxB6nRL/eQb9bFrQU0gUsnajbJqoLIXwHakCLWgo0tKabjqM",
-  render_errors: [view: FileManagerWeb.ErrorView, accepts: ~w(html json)],
-  pubsub: [name: FileManager.PubSub, adapter: Phoenix.PubSub.PG2]
+  render_errors: [view: DamExWeb.ErrorView, accepts: ~w(html json)],
+  pubsub: [name: DamEx.PubSub, adapter: Phoenix.PubSub.PG2]
 
 # Configures Elixir's Logger
 config :logger, :console,
